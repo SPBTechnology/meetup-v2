@@ -20,6 +20,12 @@ export type Database = {
       foreignKeyName: "conversation_invites_conversation_id_fkey"
       columns: ["conversation_id"]
 isOneToOne: false
+      referencedRelation: "conversation_summaries"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "conversation_invites_conversation_id_fkey"
+      columns: ["conversation_id"]
+isOneToOne: false
       referencedRelation: "conversations"
       referencedColumns: ["id"]
     },{
@@ -42,6 +48,12 @@ isOneToOne: false
                   }
                   Relationships: [
                     {
+      foreignKeyName: "conversation_participants_conversation_id_fkey"
+      columns: ["conversation_id"]
+isOneToOne: false
+      referencedRelation: "conversation_summaries"
+      referencedColumns: ["id"]
+    },{
       foreignKeyName: "conversation_participants_conversation_id_fkey"
       columns: ["conversation_id"]
 isOneToOne: false
@@ -170,6 +182,12 @@ isOneToOne: false
       foreignKeyName: "events_conversation_id_fkey"
       columns: ["conversation_id"]
 isOneToOne: false
+      referencedRelation: "conversation_summaries"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "events_conversation_id_fkey"
+      columns: ["conversation_id"]
+isOneToOne: false
       referencedRelation: "conversations"
       referencedColumns: ["id"]
     },{
@@ -192,6 +210,12 @@ isOneToOne: false
                   }
                   Relationships: [
                     {
+      foreignKeyName: "messages_conversation_id_fkey"
+      columns: ["conversation_id"]
+isOneToOne: false
+      referencedRelation: "conversation_summaries"
+      referencedColumns: ["id"]
+    },{
       foreignKeyName: "messages_conversation_id_fkey"
       columns: ["conversation_id"]
 isOneToOne: false
@@ -221,7 +245,26 @@ isOneToOne: false
                 }
           }
           Views: {
-            [_ in never]: never
+            "conversation_summaries": {
+                  Row: {
+                    "created_at": string | null,"created_by": string | null,"id": string | null,"last_activity_at": string | null,"last_message_at": string | null,"last_message_content": string | null,"last_message_id": string | null,"last_message_sender_id": string | null,"name": string | null,"type": Database["public"]['Enums']["conversation_type"] | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "conversations_created_by_fkey"
+      columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "messages_sender_id_fkey"
+      columns: ["last_message_sender_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                }
           }
           Functions: {
             "accept_invite":
