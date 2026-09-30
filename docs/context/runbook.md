@@ -1,12 +1,22 @@
 # Runbook
 
-## Start a session
+## Everyday
 
-1. Docker Desktop running.
-2. Prototype stack stopped (both don't fit in Docker's memory):
-   `cd ../meetup && supabase stop` — its data is kept; `supabase start` there restores it.
-3. `supabase start` in this repo.
-4. `npx expo start` (add `--host lan` for a physical phone).
+```bash
+npm run setup                 # bring everything up clean (idempotent, ~80s with cached images)
+npm run test:all              # full suite
+npx expo start --host lan     # app on a physical phone
+npm run teardown              # stop + delete local data and .env
+npm run teardown -- --keep-data   # just stop
+npm run setup -- --keep-data      # restart without resetting the DB
+```
+
+Prerequisites (checked by setup): Docker Desktop running, Node 22 (`nvm use`), no other
+Supabase stack running — stop the prototype's with `(cd ../meetup && supabase stop)`; its
+data is kept.
+
+**Something weird locally?** `npm run teardown && npm run setup`. That rebuilds everything
+from migrations; there is no local state worth keeping.
 
 ## Local ports (offset from Supabase defaults so they never collide with the prototype)
 
@@ -20,29 +30,38 @@
 Storage and analytics are **disabled** in `supabase/config.toml` to save Docker memory.
 Re-enable `[storage]` when avatars are implemented.
 
-## Environment
+## Environment files
 
-`cp .env.example .env`, then fill keys from `supabase status`. For a physical phone,
-`EXPO_PUBLIC_SUPABASE_URL` must use the Mac's LAN IP (`ipconfig getifaddr en0`, or `en1`
-on some Macs) — `127.0.0.1` on the phone means the phone. Node tooling rewrites the host to
-127.0.0.1 automatically, so tests work either way.
+- `.env` is **generated** by `scripts/write-env.sh` (run by setup) — don't edit it.
+- Hand-maintained values go in `.env.local` (Expo loads it too; never committed).
+- The app URL uses the Mac's LAN IP so a physical phone can reach the stack. If detection
+  fails (no `en0`/`en1` address), re-run: `LAN_IP=192.168.x.y bash scripts/write-env.sh`.
+  Node tooling rewrites the host to 127.0.0.1, so tests work either way.
 
 ## Database
 
 ```bash
-supabase migration new <name>     # create
-supabase db reset                 # rebuild local DB from all migrations
-npm run test:db                   # pgTAP
-supabase db diff                  # should print nothing — else Studio drift, capture as migration
-supabase gen types typescript --local --schema public > src/types/database.types.ts
+npx supabase migration new <name>   # create a migration
+npm run db:reset                    # rebuild local DB from all migrations
+npm run test:db                     # pgTAP
+npm run db:types                    # regenerate src/types/database.types.ts
+npm run db:types:check              # fail if types are stale
+npx supabase db diff                # should print nothing — otherwise Studio drift
 ```
+
+## Upgrading the Supabase CLI
+
+`npm install --save-dev --save-exact supabase@<version>` → `npm run teardown && npm run setup`
+(pulls new images) → `npm run test:all` → commit with a note in `state.md`. CI verifies it.
 
 ## Troubleshooting
 
 | Symptom | Fix |
 |---------|-----|
-| `supabase start`: a container "unhealthy" | Usually Docker memory. Stop other stacks (`docker ps`), retry. |
-| Phone: "Network request failed" | Same Wi-Fi; `.env` URL uses LAN IP, port 54421; Supabase running. |
-| Jest: `Cannot use import statement outside a module` in node_modules | A package needs transforming — extend jest-expo's `transformIgnorePatterns`, don't replace it. |
-| `npm install` ERESOLVE | Use `npx expo install <pkg>`; check nothing pulled Jest 30 / react-dom ≠ react version. |
+| setup: "Other Supabase stack(s) running" | Stop them (command printed). Two stacks exhaust Docker memory. |
+| `supabase start`: container "unhealthy" | Usually memory. `docker ps` for strays; `npm run teardown && npm run setup`. |
+| `toomanyrequests: Rate exceeded` pulling images | Public ECR throttling; the CLI retries. Re-run setup if it gives up. |
+| Phone: "Network request failed" | Same Wi-Fi; `.env` URL uses LAN IP and port 54421 (see above). |
+| Jest: `Cannot use import statement outside a module` | Extend jest-expo's `transformIgnorePatterns`, don't replace it. |
+| `npm install` ERESOLVE | Use `npx expo install <pkg>`; check nothing pulled Jest 30 / a mismatched react-dom. |
 | iOS local build fails on Xcode version | Expected on macOS Ventura — build iOS with EAS. |

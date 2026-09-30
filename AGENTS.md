@@ -18,21 +18,24 @@ At minimum read `docs/context/state.md` — it says what phase we are in and wha
 ## Commands
 
 ```bash
-supabase start              # local stack on ports 544xx (Studio: http://127.0.0.1:54423)
+npm run setup               # clean local env: pinned Supabase CLI, stack on 544xx, .env, DB from migrations
+npm run teardown            # stop + delete local data/.env (--keep-data to only stop)
 npx expo start              # dev server
-npm run typecheck           # tsc --noEmit
-npm test                    # unit + component tests (no network)
-npm run test:db             # pgTAP: schema + RLS policy tests (needs supabase start)
-npm run test:int            # data layer against local Supabase (needs supabase start)
-npm run test:all            # everything above, in order
-supabase db reset           # rebuild local DB from migrations
-supabase gen types typescript --local --schema public > src/types/database.types.ts
+npm run test:all            # typecheck, lint, unit, pgTAP, types drift, integration — must pass
+npm test                    # unit + component tests only (no network)
+npm run test:db             # pgTAP: schema, RLS, grants, RPCs
+npm run test:int            # through the real API incl. Realtime
+npm run db:reset            # rebuild local DB from migrations
+npm run db:types            # regenerate src/types/database.types.ts
 ```
+
+Always `npx supabase` (pinned), never a global `supabase`. Environments must stay
+reproducible: any new tool or setup step gets scripted setup/teardown (ADR 0008).
 
 ## Hard rules
 
 1. **Definition of done** — a task is not done until:
-   - `npm run test:all` passes (typecheck, unit, pgTAP, integration);
+   - `npm run test:all` passes (every layer — none skipped or left red);
    - new behaviour has tests at the right layer (see `docs/context/testing.md`);
    - `docs/context/state.md` is updated (what changed, what is next, date);
    - a changed decision has a new ADR in `docs/context/decisions/` (supersede, never edit);
