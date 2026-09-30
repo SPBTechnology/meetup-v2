@@ -62,6 +62,7 @@
 | Realtime tests | Wait for the `system` message `{extension: 'postgres_changes', status: 'ok'}`, not the SUBSCRIBED status, before inserting — use `listenForInserts`. |
 | pgTAP | A volatile function in `WHERE` runs per row — capture its result with `\gset` first. Cast psql variables passed to polymorphic functions (`:'code'::text`). Don't end a line with `-- comment;` expecting the `;` to execute. |
 | GitHub Actions | Check current major versions before bumping (`actions/checkout`, `setup-node` were v7 in Sep 2026). |
+| Maestro / Java | `JAVA_HOME`/`PATH` don't persist between separate command invocations here — export them in the *same* command that runs `gradlew` (via `npm run android`) or `maestro`, or add them to `~/.zshrc` for interactive shells. Maestro is installed via its own installer, not Homebrew — see ADR 0009 for why (a broken from-source JDK build on this machine's "Tier 3" macOS version). |
 
 ## Git
 

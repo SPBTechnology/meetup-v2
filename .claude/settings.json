@@ -37,7 +37,21 @@
       "Bash(npx eslint:*)",
       "Bash(bash scripts/:*)",
       "Bash(git rm:*)",
-      "Bash(git mv:*)"
+      "Bash(git mv:*)",
+      "Bash(npm run maestro:*)",
+      "Bash(brew install:*)",
+      "Bash(brew uninstall:*)",
+      "Bash(brew tap:*)",
+      "Bash(brew untap:*)",
+      "Bash(brew list:*)",
+      "Bash(brew info:*)",
+      "Bash(brew search:*)",
+      "Bash(brew --prefix:*)",
+      "Bash(maestro --version)",
+      "Bash(npx expo run:android:*)",
+      "Bash(emulator -list-avds)",
+      "Bash(emulator -avd:*)",
+      "Bash(adb:*)"
     ],
     "deny": [
       "Bash(git push:*)",

@@ -15,7 +15,7 @@ All layers must stay green after every change.
 | Database | pgTAP | `supabase/tests/database/*.test.sql` | `npm run test:db` | Schema, constraints, RLS, column grants, RPCs — per role |
 | Types drift | script | `scripts/check-types.sh` | `npm run db:types:check` | Committed types match migrations |
 | Integration | Jest (node) + supabase-js | `tests/integration/*.int.test.ts` | `npm run test:int` | Behaviour through the real API: exposure, grants via PostgREST, RPC contract, Realtime |
-| UI / E2E | Maestro | `.maestro/*.yaml` | Phase 2 | Critical journeys on a device build |
+| UI / E2E | Maestro | `.maestro/*.yaml` | `npm run test:e2e` | Critical journeys on a real device build |
 
 `npm run test:all` = typecheck → lint → unit → pgTAP → types drift → integration.
 
@@ -81,6 +81,16 @@ Routes: `renderRoute` from `src/test-utils/renderRoute.ts` (see conventions.md).
 proves a clean rebuild) → `npm run test:all` → `scripts/check-context-docs.sh` (PRs that change
 migrations or package.json must also change `docs/context/`).
 
+## Maestro
+
+One-time toolchain (ADR 0009): `npm run maestro:setup` (Java 17 + Maestro CLI via Homebrew,
+idempotent; `npm run maestro:teardown` reverses it). Android is the primary target — build the
+dev client with `npm run android` onto a running emulator, then `npm run test:e2e`.
+
+Flows start with `launchApp: clearState: true` for a clean app-storage slate. A flow that
+signs up a real user (like the first one) mutates the local database — `npm run db:reset`
+before re-running it.
+
 ## Not yet in place
 
-- Maestro (Java + CLI + dev build) — Phase 2, with scripted install/teardown per ADR 0008.
+- Maestro in CI (needs an emulator or EAS Workflows runner) — later.

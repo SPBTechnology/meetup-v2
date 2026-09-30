@@ -35,8 +35,8 @@
     "setup": "bash scripts/setup.sh",
     "teardown": "bash scripts/teardown.sh",
     "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "typecheck": "tsc --noEmit",
     "lint": "expo lint",
     "test": "jest --selectProjects unit",
@@ -46,7 +46,10 @@
     "test:all": "npm run typecheck && npm run lint && npm run test && npm run test:db && npm run db:types:check && npm run test:int",
     "db:reset": "supabase db reset",
     "db:types": "supabase gen types typescript --local --schema public > src/types/database.types.ts",
-    "db:types:check": "bash scripts/check-types.sh"
+    "db:types:check": "bash scripts/check-types.sh",
+    "maestro:setup": "bash scripts/setup-maestro.sh",
+    "maestro:teardown": "bash scripts/teardown-maestro.sh",
+    "test:e2e": "maestro test .maestro"
   },
   "private": true,
   "engines": {
