@@ -63,6 +63,7 @@
 | pgTAP | A volatile function in `WHERE` runs per row — capture its result with `\gset` first. Cast psql variables passed to polymorphic functions (`:'code'::text`). Don't end a line with `-- comment;` expecting the `;` to execute. |
 | GitHub Actions | Check current major versions before bumping (`actions/checkout`, `setup-node` were v7 in Sep 2026). |
 | Maestro / Java | `JAVA_HOME`/`PATH` don't persist between separate command invocations here — export them in the *same* command that runs `gradlew` (via `npm run android`) or `maestro`, or add them to `~/.zshrc` for interactive shells. Maestro is installed via its own installer, not Homebrew — see ADR 0009 for why (a broken from-source JDK build on this machine's "Tier 3" macOS version). |
+| Maestro `launchApp: clearState: true` | On this machine, the force-stop + `pm clear` + relaunch alone was observed taking 12-16s under load (confirmed via `adb shell dumpsys window` polling — focus briefly drops to the launcher before the app's window ID changes), before the fresh cold process (Hermes init + Metro bundle fetch) even starts. Give the first post-launch assertion `extendedWaitUntil` with a 45s timeout, not a bare `assertVisible` — the element renders correctly once the JS loads, it's purely a slow-launch timing issue, not a testID/id-matching bug. |
 
 ## Git
 

@@ -16,8 +16,13 @@ appId: com.spbtechnology.meetupv2
 - launchApp:
     clearState: true
 
-- assertVisible:
-    id: "SignIn-Screen"
+# clearState's force-stop + pm clear + relaunch alone was observed taking
+# 12-16s on this machine under load, before the fresh cold process (Hermes
+# init + Metro bundle fetch) even starts — 45s covers that plus load time.
+- extendedWaitUntil:
+    visible:
+      id: "SignIn-Screen"
+    timeout: 45000
 - tapOn:
     id: "SignIn-SignUpLink"
 
