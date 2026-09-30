@@ -71,6 +71,13 @@ export async function createConversation(params: CreateConversationParams = {}):
   return data;
 }
 
+/** A single conversation the caller is a member of (e.g. for a chat screen header). */
+export async function getConversation(id: string): Promise<ConversationSummary> {
+  const { data, error } = await supabase.from('conversation_summaries').select().eq('id', id).single();
+  if (error) throw fromPostgrestError(error);
+  return toConversationSummary(data);
+}
+
 /** Adds existing users to a conversation the caller belongs to. Returns how many were newly added. */
 export async function addParticipants(conversationId: string, userIds: string[]): Promise<number> {
   const { data, error } = await supabase.rpc('add_participants', {

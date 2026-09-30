@@ -20,6 +20,15 @@ function selectResult(result: { data?: unknown; error?: PostgrestError | null })
   return builder;
 }
 
+// .from(table).select().eq(col, val).single() — the chain getConversation uses.
+function getResult(result: { data?: unknown; error?: PostgrestError | null }) {
+  const builder: Record<string, jest.Mock> = {};
+  builder.select = jest.fn(() => builder);
+  builder.eq = jest.fn(() => builder);
+  builder.single = jest.fn(() => Promise.resolve({ data: result.data ?? null, error: result.error ?? null }));
+  return builder;
+}
+
 const SUMMARY_ROW = {
   id: 'conv-1',
   type: 'group' as const,
@@ -89,6 +98,26 @@ describe('conversations.ts', () => {
       mockFrom.mockReturnValue(selectResult({ error: pgError('42501', 'denied') }));
 
       await expect(conversations.listConversations()).rejects.toMatchObject({ code: 'not_authenticated' });
+    });
+  });
+
+  describe('getConversation', () => {
+    it('maps a single conversation row by id', async () => {
+      const builder = getResult({ data: SUMMARY_ROW });
+      mockFrom.mockReturnValue(builder);
+
+      const result = await conversations.getConversation('conv-1');
+
+      expect(mockFrom).toHaveBeenCalledWith('conversation_summaries');
+      expect(builder.eq).toHaveBeenCalledWith('id', 'conv-1');
+      expect(result.id).toBe('conv-1');
+      expect(result.name).toBe('Stag do');
+    });
+
+    it('throws a DataError on failure', async () => {
+      mockFrom.mockReturnValue(getResult({ error: pgError('42501', 'denied') }));
+
+      await expect(conversations.getConversation('conv-1')).rejects.toMatchObject({ code: 'not_authenticated' });
     });
   });
 
