@@ -50,7 +50,8 @@
 
 | Library | Gotcha |
 |---------|--------|
-| RNTL v14 | `render` is **async** — `await render(...)`. Needs the `test-renderer` peer. |
+| RNTL v14 | `render` **and** `renderHook` are async — `await render(...)`, `await renderHook(...)`, and `await unmount()`/`await rerender(...)` too (their return type is `Promise<void>`). Needs the `test-renderer` peer. |
+| RNTL v14 + React 19 `act()` | `act(() => triggerStateUpdate())` without `await` logs "called act(async () => ...) without await" and the update may not have flushed before your next assertion — silently breaking *later* tests too (state updates leak across tests when this happens). Always `await act(...)`. Because `renderHook` itself now awaits internal flushing, a transient state (e.g. `loading: true` right after the initial render) is often no longer observable — assert the settled state via `waitFor` instead. |
 | expo-router 57 testing | `renderRouter` loses its helpers under RNTL v14 — use `src/test-utils/renderRoute.ts`, which awaits correctly and exposes `getPathname()` etc. The `toHavePathname` matcher does not work. |
 | jest-expo 57 | Don't override `transformIgnorePatterns` with the docs' old pattern — the preset default already covers new Expo deps (e.g. `standard-navigation`). Extend, don't replace. |
 | TypeScript 6 | `types` no longer auto-includes `@types/*`; `tsconfig.json` lists `jest` and `node` explicitly. |
@@ -61,6 +62,8 @@
 | Realtime tests | Wait for the `system` message `{extension: 'postgres_changes', status: 'ok'}`, not the SUBSCRIBED status, before inserting — use `listenForInserts`. |
 | pgTAP | A volatile function in `WHERE` runs per row — capture its result with `\gset` first. Cast psql variables passed to polymorphic functions (`:'code'::text`). Don't end a line with `-- comment;` expecting the `;` to execute. |
 | GitHub Actions | Check current major versions before bumping (`actions/checkout`, `setup-node` were v7 in Sep 2026). |
+| Maestro / Java | `JAVA_HOME`/`PATH` don't persist between separate command invocations here — export them in the *same* command that runs `gradlew` (via `npm run android`) or `maestro`, or add them to `~/.zshrc` for interactive shells. Maestro is installed via its own installer, not Homebrew — see ADR 0009 for why (a broken from-source JDK build on this machine's "Tier 3" macOS version). |
+| Maestro `launchApp: clearState: true` | On this machine, the force-stop + `pm clear` + relaunch alone was observed taking 12-16s under load (confirmed via `adb shell dumpsys window` polling — focus briefly drops to the launcher before the app's window ID changes), before the fresh cold process (Hermes init + Metro bundle fetch) even starts. Give the first post-launch assertion `extendedWaitUntil` with a 45s timeout, not a bare `assertVisible` — the element renders correctly once the JS loads, it's purely a slow-launch timing issue, not a testID/id-matching bug. |
 
 ## Git
 
