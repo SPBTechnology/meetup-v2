@@ -64,6 +64,16 @@ export async function createTestUser(label = 'user'): Promise<TestUser> {
 }
 
 /**
+ * Register a user/client created some other way (e.g. via the real
+ * self-serve `supabase.auth.signUp()`, to exercise that exact path) so
+ * `cleanupTestUsers()` still removes it.
+ */
+export function trackUserForCleanup(userId: string, client?: SupabaseClient): void {
+  created.push(userId);
+  if (client) clients.push(client);
+}
+
+/**
  * Close any Realtime channels test clients opened, so subscriptions don't leak
  * into the next test, then delete every auth user created by this test file
  * (rows cascade from auth.users).

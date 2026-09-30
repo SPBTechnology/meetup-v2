@@ -1,0 +1,47 @@
+# First Maestro flow (Phase 2): sign up -> home, proving the auth gate works
+# on a real device/emulator, not just in mocked route tests.
+#
+# Prerequisites:
+#   npm run maestro:setup      # Java 17 + Maestro CLI (one-time, see ADR 0009)
+#   npm run setup              # local Supabase running
+#   npm run android             # builds and installs the dev client on an emulator
+#
+# This creates a real account against the local Supabase stack. Re-running
+# with the same email fails at the "already registered" step — reset first:
+#   npm run db:reset
+#
+# Run: npm run test:e2e
+appId: com.spbtechnology.meetupv2
+---
+- launchApp:
+    clearState: true
+
+# clearState's force-stop + pm clear + relaunch alone was observed taking
+# 12-16s on this machine under load, before the fresh cold process (Hermes
+# init + Metro bundle fetch) even starts — 45s covers that plus load time.
+- extendedWaitUntil:
+    visible:
+      id: "SignIn-Screen"
+    timeout: 45000
+- tapOn:
+    id: "SignIn-SignUpLink"
+
+- assertVisible:
+    id: "SignUp-Screen"
+- tapOn:
+    id: "SignUp-EmailInput"
+- inputText: "maestro-e2e@example.test"
+- tapOn:
+    id: "SignUp-PasswordInput"
+- inputText: "Maestro-password-1!"
+- hideKeyboard
+- tapOn:
+    id: "SignUp-SubmitButton"
+
+# Local dev has email confirmation off (supabase/config.toml), so this should
+# land straight on Home via the Stack.Protected auth gate — no manual
+# navigation, no confirmation screen.
+- extendedWaitUntil:
+    visible:
+      id: "Home-Screen"
+    timeout: 15000

@@ -54,6 +54,35 @@ npx supabase db diff                # should print nothing — otherwise Studio 
 `npm install --save-dev --save-exact supabase@<version>` → `npm run teardown && npm run setup`
 (pulls new images) → `npm run test:all` → commit with a note in `state.md`. CI verifies it.
 
+## Maestro (UI tests)
+
+One-time, machine-wide (ADR 0009 — installs Java via Homebrew, Maestro via its own installer,
+not Homebrew, because that formula's own JDK dependency fails to build on this macOS version):
+
+```bash
+npm run maestro:setup      # Java 17 + Maestro CLI (idempotent)
+npm run maestro:teardown   # reverses it (--keep-java to keep the JDK)
+```
+
+`JAVA_HOME`/`PATH` must be set in whatever shell runs `npm run android` or `maestro` —
+they don't carry over between separate commands. The setup script prints the exact lines;
+add them to `~/.zshrc` once so every new shell has them.
+
+Then, per session:
+
+```bash
+# emulator already running? `emulator -list-avds` then `emulator -avd <name>` if not
+npm run android             # builds + installs the dev client (first time: several minutes;
+                             # also runs Expo prebuild the very first time — generates the
+                             # gitignored android/ directory and switches this script from
+                             # `expo start --android` to `expo run:android`)
+npm run test:e2e            # maestro test .maestro
+```
+
+Android is the primary target here — this Mac has no local iOS build path (see below), but
+does have a working Android SDK and emulators already. A flow that creates a real account
+(like the first one) needs `npm run db:reset` before it can be re-run.
+
 ## Troubleshooting
 
 | Symptom | Fix |
