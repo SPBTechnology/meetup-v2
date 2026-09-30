@@ -1,0 +1,38 @@
+-- Shared pgTAP helpers. Include at the top of a test file, after `begin;`:
+--   \ir _helpers.psql
+-- Everything is created in pg_temp, so it vanishes with the session and is
+-- rolled back with the test's transaction. Not a test file itself (.psql).
+
+create extension if not exists pgtap with schema extensions;
+
+-- Create an auth user (fires the profile trigger). Returns the new id.
+create function pg_temp.create_user(p_email text, p_meta jsonb default '{}')
+returns uuid
+language sql
+as $$
+  insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data)
+  values (gen_random_uuid(), '00000000-0000-0000-0000-000000000000',
+          'authenticated', 'authenticated', p_email, p_meta)
+  returning id;
+$$;
+
+-- Act as a signed-in user for the rest of the transaction (or until
+-- pg_temp.logout()). Must be called while running as postgres.
+create function pg_temp.login_as(p_user_id uuid)
+returns void
+language sql
+as $$
+  select set_config('request.jwt.claims',
+                    json_build_object('sub', p_user_id, 'role', 'authenticated')::text,
+                    true),
+         set_config('role', 'authenticated', true);
+$$;
+
+-- Act as the anonymous (signed-out) role.
+create function pg_temp.login_anon()
+returns void
+language sql
+as $$
+  select set_config('request.jwt.claims', '{"role":"anon"}', true),
+         set_config('role', 'anon', true);
+$$;
