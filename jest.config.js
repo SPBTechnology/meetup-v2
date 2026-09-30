@@ -14,7 +14,10 @@ module.exports = {
 
     // ── Integration tests ─────────────────────────────────────────────
     // Data-layer functions against the real local Supabase stack
-    // (`supabase start`). Must run serially: files share one database.
+    // (`npm run setup`). Must run serially: files share one database.
+    // `npm run test:int` adds --forceExit: realtime-js leaves two 10s timers
+    // (channel-leave ack, socket-close fallback) running after a clean
+    // disconnect, and the socket one isn't configurable. See conventions.md.
     {
       displayName: 'integration',
       preset: 'ts-jest',

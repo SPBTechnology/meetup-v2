@@ -32,7 +32,12 @@
       "Bash(git checkout -b:*)",
       "Bash(git switch:*)",
       "Bash(git branch:*)",
-      "Bash(maestro test:*)"
+      "Bash(maestro test:*)",
+      "Bash(npx supabase:*)",
+      "Bash(npx eslint:*)",
+      "Bash(bash scripts/:*)",
+      "Bash(git rm:*)",
+      "Bash(git mv:*)"
     ],
     "deny": [
       "Bash(git push:*)",
@@ -42,7 +47,9 @@
       "Bash(eas submit:*)",
       "Bash(npx eas-cli@latest submit:*)",
       "Bash(rm -rf:*)",
-      "Read(./.env)"
+      "Read(./.env)",
+      "Bash(npx supabase db push:*)",
+      "Bash(npx supabase link:*)"
     ]
   }
 }

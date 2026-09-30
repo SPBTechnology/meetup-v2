@@ -38,6 +38,7 @@ export type TestUser = {
 
 const TEST_PASSWORD = 'Test-password-1!';
 const created: string[] = [];
+const clients: SupabaseClient[] = [];
 
 /**
  * Create a real auth user and return a client signed in as them, so tests
@@ -57,12 +58,21 @@ export async function createTestUser(label = 'user'): Promise<TestUser> {
   const client = createClient(SUPABASE_URL, PUBLISHABLE_KEY, noSession);
   const { error: signInError } = await client.auth.signInWithPassword({ email, password: TEST_PASSWORD });
   if (signInError) throw signInError;
+  clients.push(client);
 
   return { id: data.user.id, email, client };
 }
 
-/** Delete every auth user created by this test file. Table rows cascade from auth.users. */
+/**
+ * Close any Realtime channels test clients opened, so subscriptions don't leak
+ * into the next test, then delete every auth user created by this test file
+ * (rows cascade from auth.users).
+ */
 export async function cleanupTestUsers(): Promise<void> {
+  while (clients.length > 0) {
+    const client = clients.pop()!;
+    if (client.getChannels().length > 0) await client.removeAllChannels();
+  }
   while (created.length > 0) {
     const id = created.pop()!;
     const { error } = await service.auth.admin.deleteUser(id);
