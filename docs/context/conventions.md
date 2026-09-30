@@ -50,7 +50,8 @@
 
 | Library | Gotcha |
 |---------|--------|
-| RNTL v14 | `render` is **async** — `await render(...)`. Needs the `test-renderer` peer. |
+| RNTL v14 | `render` **and** `renderHook` are async — `await render(...)`, `await renderHook(...)`, and `await unmount()`/`await rerender(...)` too (their return type is `Promise<void>`). Needs the `test-renderer` peer. |
+| RNTL v14 + React 19 `act()` | `act(() => triggerStateUpdate())` without `await` logs "called act(async () => ...) without await" and the update may not have flushed before your next assertion — silently breaking *later* tests too (state updates leak across tests when this happens). Always `await act(...)`. Because `renderHook` itself now awaits internal flushing, a transient state (e.g. `loading: true` right after the initial render) is often no longer observable — assert the settled state via `waitFor` instead. |
 | expo-router 57 testing | `renderRouter` loses its helpers under RNTL v14 — use `src/test-utils/renderRoute.ts`, which awaits correctly and exposes `getPathname()` etc. The `toHavePathname` matcher does not work. |
 | jest-expo 57 | Don't override `transformIgnorePatterns` with the docs' old pattern — the preset default already covers new Expo deps (e.g. `standard-navigation`). Extend, don't replace. |
 | TypeScript 6 | `types` no longer auto-includes `@types/*`; `tsconfig.json` lists `jest` and `node` explicitly. |
