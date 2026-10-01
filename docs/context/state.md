@@ -1,6 +1,6 @@
 # State
 
-**Last updated:** 2026-10-01 · **Current phase:** 3 complete (PR pending) → Phase 4 next · **Branch:** `phase-3-conversations`
+**Last updated:** 2026-10-01 · **Current phase:** 4 complete (PR pending) → Phase 5 next · **Branch:** `phase-4-invites`
 
 ## Phase plan
 
@@ -13,8 +13,8 @@ alone — flag them at the start of the phase.
 | 0 | Foundation: Expo 57 + Router skeleton, test harness, context directory, agent settings | ✅ Done | Opus | — |
 | 1 | Baseline schema + RLS + RPCs, pgTAP suite, API integration tests, lint, CI, reproducible setup/teardown | ✅ Done (merged) | Opus | Push branch, open PR, confirm CI green |
 | 2 | Auth + profiles: Supabase client + session storage (check current Expo/Supabase docs), `src/data/auth.ts` + `DataError` mapping, sign-up/sign-in screens, auth-gated routing, profile edit (display name, phone). Maestro with scripted install/teardown + first flow (sign up → home). | ✅ Done (merged) | Sonnet (Opus for session-storage choice) | Install Java; EAS login; dev build |
-| 3 | Conversations + messaging: list, create group, chat screen, send, paging, Realtime; component + integration tests. | ✅ Done (PR to merge) | Sonnet | — |
-| 4 | Invites UI: share code/link (`accept_invite`), phonebook match (`match_phone_numbers` + `expo-contacts`), SMS for non-users (`expo-sms`). Backend already done in Phase 1. | | Sonnet | Device test (contacts/SMS) |
+| 3 | Conversations + messaging: list, create group, chat screen, send, paging, Realtime; component + integration tests. | ✅ Done (merged) | Sonnet | — |
+| 4 | Invites UI: share code/link (`accept_invite`), phonebook match (`match_phone_numbers` + `expo-contacts`), SMS for non-users (`expo-sms`). Backend already done in Phase 1. | ✅ Done (PR to merge) | Sonnet | Device test (contacts/SMS) — still outstanding, see below |
 | 5 | Events: port EventChip, EventBar, EventDetailCard, create wizard (`create_event`), edit, confirm — with tests. | | Sonnet | — |
 | 6 | Push notifications: Expo Notifications, token registration, triggers for messages/event changes. | | Opus → Sonnet | APNs key / FCM, dev build |
 | 7 | First real groups: internal build to 3–5 groups; collect how they phrase availability. | | — | Everything |
@@ -70,8 +70,32 @@ venue app (request model), rate limiting on invite/phone RPCs before public laun
   and all three screens, including Realtime dedup and pagination; integration tests for the
   view through PostgREST and the keyset `.or()` filter string against the real API.
 
+## Done in Phase 4 (2026-10-01)
+
+- **Data layer**: `src/data/invites.ts` (`createInvite`, `listInvites`, `getOrCreateActiveInvite`
+  — reuses an unrevoked/unexpired invite instead of spamming new rows, `acceptInvite`,
+  `matchPhoneNumbers`); `src/lib/inviteCode.ts` (pure code formatting, kept out of `src/data/`
+  since it touches no Supabase); `src/lib/phoneNumber.ts` (normalizes device contact numbers to
+  E.164 via `libphonenumber-js` for matching against `profiles.phone_number`).
+- **Screens**: `(app)/invite.tsx` — share a code (native `Share`), find friends already on the
+  app via `expo-contacts` + `match_phone_numbers` (add directly via `add_participants`), text
+  the rest via `expo-sms`; `(app)/join.tsx` — manual code redemption. Both reachable from
+  `(app)/index.tsx` ("Join with code") and the chat screen header ("Invite").
+- **New native deps**: `expo-contacts`, `expo-sms` (dev client rebuilt; SDK 57's `expo-contacts`
+  API is completely different from older SDKs — see conventions.md).
+- **Tests**: unit tests for the data layer, both new screens (contacts/SMS/Share mocked), and
+  the invite-navigation wiring from the chat screen; integration test for `match_phone_numbers`
+  through the real API (the one RPC that didn't already have coverage from Phase 1). 262 tests
+  total (129 unit, 95 pgTAP, 20 integration), all passing.
+- **Found via manual device testing**: a stale dev-client session (pointing at a user a later
+  `npm run db:reset` had deleted) produced a generic error on `createConversation` — same root
+  cause already diagnosed in Phase 3, not a new bug; `pm clear` + fresh sign-in resolved it.
+
 ## Known issues / notes
 
+- **Device test still needed (Phase 4)**: contacts matching and SMS composing are unit-tested
+  with mocks but not verified on a real device — the Android emulator can't meaningfully
+  exercise either (empty contacts by default, no real SMS transport). Needs the owner.
 - **Maestro E2E flakiness (unresolved)**: both flows reproducibly land on `CreateGroup-Screen`
   instead of `Home-Screen` right after a fresh sign-up — confirmed via Maestro's own
   UI-hierarchy dumps (not a screenshot artifact), reproduced across a from-scratch emulator +
@@ -91,9 +115,9 @@ venue app (request model), rate limiting on invite/phone RPCs before public laun
   don't `audit fix --force` (breaks Expo pins).
 - Prototype (`../meetup`) is reference only; its local stack is stopped with data preserved.
 
-## Next step (Phase 4, first task)
+## Next step (Phase 5, first task)
 
-Invites UI: share code/link via `accept_invite`, phonebook match via `match_phone_numbers` +
-`expo-contacts`, SMS for non-users via `expo-sms`. Backend RPCs already exist from Phase 1 —
-this phase is UI + device-permission flows only. Needs owner: device test for contacts/SMS
-(can't be fully exercised in the emulator).
+Events: port EventChip, EventBar, EventDetailCard, create wizard (`create_event`), edit, confirm
+from the prototype (`../meetup`) — with tests at each step, as in Phases 2-4. Backend schema and
+RPCs already exist from Phase 1 (`events`, `event_date_options`, `event_locations`,
+`event_responses`, `create_event`).

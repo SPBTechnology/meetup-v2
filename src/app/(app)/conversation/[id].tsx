@@ -102,7 +102,12 @@ export default function ConversationScreen() {
         <Text style={styles.title} numberOfLines={1}>
           {title}
         </Text>
-        <View style={styles.headerSpacer} />
+        <Pressable
+          onPress={() => router.push({ pathname: '/invite', params: { conversationId: id } })}
+          testID="Conversation-InviteButton"
+        >
+          <Text style={styles.invite}>Invite</Text>
+        </Pressable>
       </View>
 
       {error && (
@@ -179,8 +184,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#2563eb',
   },
-  headerSpacer: {
-    width: 40,
+  invite: {
+    fontSize: 16,
+    color: '#2563eb',
   },
   title: {
     flex: 1,

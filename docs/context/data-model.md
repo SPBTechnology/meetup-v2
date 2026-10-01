@@ -71,6 +71,14 @@ display them as `ABCD-EFGH`.
   (exactly-two-members) enforcement — MVP is group-first.
 - Realtime uses `postgres_changes` with default replica identity: DELETE events carry only
   primary keys.
+- Phonebook matching normalizes contact numbers to E.164 assuming a single default region
+  (GB — see `src/lib/phoneNumber.ts`), not the user's actual region. A contact saved with an
+  explicit country code still matches correctly regardless; a local-format number from another
+  country may not. Fine for the current single-market MVP.
+- Invite redemption is manual code entry only (`(app)/join.tsx`) — sharing produces a code to
+  paste, not a working `meetup://invite/<code>` deep link. Deep-link auto-redemption would need
+  Android App Links / iOS Universal Links domain verification, which this project doesn't have
+  a production domain for yet.
 
 ## Changes from the prototype (and why)
 
