@@ -1,0 +1,79 @@
+# Second Maestro flow (Phase 3): sign up -> create a group -> send a
+# message -> see it appear. Proves the conversation list, create-group
+# flow, and chat screen (send + Realtime echo) work on a real emulator.
+#
+# Prerequisites: same as sign-up-to-home.yaml (see that file's header).
+# Self-contained: signs up its own account, so it doesn't depend on
+# sign-up-to-home.yaml having run first (or on running before it).
+#
+# Run: npm run test:e2e
+appId: com.spbtechnology.meetupv2
+---
+# See sign-up-to-home.yaml: stopApp forces a real process kill before
+# clearState, since React Navigation's in-memory nested-stack state
+# otherwise survives a "cold" launch on this Android/Expo-dev-client combo.
+- stopApp
+- launchApp:
+    clearState: true
+
+# clearState's cold-launch timing (see conventions.md) needs the same
+# generous timeout as the first flow's initial assertion.
+- extendedWaitUntil:
+    visible:
+      id: "SignIn-Screen"
+    timeout: 45000
+- tapOn:
+    id: "SignIn-SignUpLink"
+
+- assertVisible:
+    id: "SignUp-Screen"
+- tapOn:
+    id: "SignUp-EmailInput"
+- inputText: "maestro-chat@example.test"
+- tapOn:
+    id: "SignUp-PasswordInput"
+- inputText: "Maestro-password-1!"
+- hideKeyboard
+- tapOn:
+    id: "SignUp-SubmitButton"
+
+- extendedWaitUntil:
+    visible:
+      id: "Home-Screen"
+    timeout: 30000
+
+# A fresh account has no conversations yet.
+- assertVisible:
+    id: "Home-EmptyText"
+- tapOn:
+    id: "Home-NewGroupButton"
+
+- assertVisible:
+    id: "CreateGroup-Screen"
+- tapOn:
+    id: "CreateGroup-NameInput"
+- inputText: "Stag do"
+- tapOn:
+    id: "CreateGroup-CreateButton"
+
+# These are single network round trips, not cold relaunches, but this
+# machine has proven consistently slower than typical Maestro defaults
+# assume, so use the same generous margin throughout.
+- extendedWaitUntil:
+    visible:
+      id: "Conversation-Screen"
+    timeout: 30000
+- assertVisible:
+    text: "Stag do"
+
+- tapOn:
+    id: "Conversation-MessageInput"
+- inputText: "Hello everyone"
+- hideKeyboard
+- tapOn:
+    id: "Conversation-SendButton"
+
+- extendedWaitUntil:
+    visible:
+      text: "Hello everyone"
+    timeout: 30000

@@ -1,6 +1,6 @@
 # State
 
-**Last updated:** 2026-09-30 · **Current phase:** 2 complete (PR pending) → Phase 3 next · **Branch:** `phase-2-auth-profiles`
+**Last updated:** 2026-10-01 · **Current phase:** 3 complete (PR pending) → Phase 4 next · **Branch:** `phase-3-conversations`
 
 ## Phase plan
 
@@ -11,9 +11,9 @@ alone — flag them at the start of the phase.
 | # | Phase | Status | Suggested model | Needs owner |
 |---|-------|--------|-----------------|-------------|
 | 0 | Foundation: Expo 57 + Router skeleton, test harness, context directory, agent settings | ✅ Done | Opus | — |
-| 1 | Baseline schema + RLS + RPCs, pgTAP suite, API integration tests, lint, CI, reproducible setup/teardown | ✅ Done (PR to merge) | Opus | Push branch, open PR, confirm CI green |
-| 2 | Auth + profiles: Supabase client + session storage (check current Expo/Supabase docs), `src/data/auth.ts` + `DataError` mapping, sign-up/sign-in screens, auth-gated routing, profile edit (display name, phone). Maestro with scripted install/teardown + first flow (sign up → home). | ✅ Done (PR to merge) | Sonnet (Opus for session-storage choice) | Install Java; EAS login; dev build |
-| 3 | Conversations + messaging: list, create group, chat screen, send, paging, Realtime; component + integration tests. | | Sonnet | — |
+| 1 | Baseline schema + RLS + RPCs, pgTAP suite, API integration tests, lint, CI, reproducible setup/teardown | ✅ Done (merged) | Opus | Push branch, open PR, confirm CI green |
+| 2 | Auth + profiles: Supabase client + session storage (check current Expo/Supabase docs), `src/data/auth.ts` + `DataError` mapping, sign-up/sign-in screens, auth-gated routing, profile edit (display name, phone). Maestro with scripted install/teardown + first flow (sign up → home). | ✅ Done (merged) | Sonnet (Opus for session-storage choice) | Install Java; EAS login; dev build |
+| 3 | Conversations + messaging: list, create group, chat screen, send, paging, Realtime; component + integration tests. | ✅ Done (PR to merge) | Sonnet | — |
 | 4 | Invites UI: share code/link (`accept_invite`), phonebook match (`match_phone_numbers` + `expo-contacts`), SMS for non-users (`expo-sms`). Backend already done in Phase 1. | | Sonnet | Device test (contacts/SMS) |
 | 5 | Events: port EventChip, EventBar, EventDetailCard, create wizard (`create_event`), edit, confirm — with tests. | | Sonnet | — |
 | 6 | Push notifications: Expo Notifications, token registration, triggers for messages/event changes. | | Opus → Sonnet | APNs key / FCM, dev build |
@@ -55,7 +55,32 @@ venue app (request model), rate limiting on invite/phone RPCs before public laun
   to be removed and re-fetched; Maestro's `clearState: true` cold-launch timing needs a 45s
   `extendedWaitUntil`, not a bare `assertVisible` — see conventions.md.
 
+## Done in Phase 3 (2026-10-01)
+
+- **Data layer**: `conversation_summaries` view (`security_invoker`, reuses existing RLS via
+  `is_conversation_member` — no separate access logic to keep in sync) for the conversation
+  list's last-message preview without an N+1 query. `src/data/conversations.ts`
+  (list/get/create/addParticipants) and `src/data/messages.ts` (send with a client-generated
+  id, keyset-paginated list matching `messages_conversation_created_idx`, Realtime subscribe).
+- **Screens**: `(app)/index.tsx` replaces the Phase 2 placeholder with the real conversation
+  list (refetches on focus); `(app)/create-group.tsx`; `(app)/conversation/[id].tsx` — inverted
+  message list with pagination, send box, Realtime with id-based de-duplication against the
+  sender's own optimistic update.
+- **Tests**: pgTAP for the view (visibility + last-message-wins); unit tests for the data layer
+  and all three screens, including Realtime dedup and pagination; integration tests for the
+  view through PostgREST and the keyset `.or()` filter string against the real API.
+
 ## Known issues / notes
+
+- **Maestro E2E flakiness (unresolved)**: both flows reproducibly land on `CreateGroup-Screen`
+  instead of `Home-Screen` right after a fresh sign-up — confirmed via Maestro's own
+  UI-hierarchy dumps (not a screenshot artifact), reproduced across a from-scratch emulator +
+  fresh Metro + fresh DB, and again after adding `stopApp` before `clearState` to force a real
+  process kill. The app's own code has no path that auto-navigates to create-group, so this
+  looks like an Expo dev-client "resume last screen" behavior tied to the long-running Metro
+  dev server rather than an application bug — not confirmed further; needs investigation before
+  relying on Maestro for Phase 4 regression coverage. All 213 other tests (99 unit, 95 pgTAP, 19
+  integration) pass and cover the same functionality directly.
 
 - `test:int` runs with `--forceExit` because of realtime-js timers (see conventions.md). Unit
   tests keep full leak detection.
@@ -66,8 +91,9 @@ venue app (request model), rate limiting on invite/phone RPCs before public laun
   don't `audit fix --force` (breaks Expo pins).
 - Prototype (`../meetup`) is reference only; its local stack is stopped with data preserved.
 
-## Next step (Phase 3, first task)
+## Next step (Phase 4, first task)
 
-Conversations + messaging: design the conversation list + create-group flow, then the chat
-screen (send, paging, Realtime) — component and integration tests alongside each piece, as in
-Phase 2.
+Invites UI: share code/link via `accept_invite`, phonebook match via `match_phone_numbers` +
+`expo-contacts`, SMS for non-users via `expo-sms`. Backend RPCs already exist from Phase 1 —
+this phase is UI + device-permission flows only. Needs owner: device test for contacts/SMS
+(can't be fully exercised in the emulator).

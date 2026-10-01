@@ -13,6 +13,12 @@
 # Run: npm run test:e2e
 appId: com.spbtechnology.meetupv2
 ---
+# clearState wipes storage but doesn't reliably kill the process on this
+# Android/Expo-dev-client combo — React Navigation's in-memory nested-stack
+# state survives, so once any run navigates deep into (app) (e.g. to
+# create-group), every later "fresh" sign-up resumes there instead of
+# landing on Home. stopApp forces a real process kill first.
+- stopApp
 - launchApp:
     clearState: true
 
@@ -40,8 +46,9 @@ appId: com.spbtechnology.meetupv2
 
 # Local dev has email confirmation off (supabase/config.toml), so this should
 # land straight on Home via the Stack.Protected auth gate — no manual
-# navigation, no confirmation screen.
+# navigation, no confirmation screen. 30s for the same reason as above: this
+# machine runs consistently slower than Maestro's defaults assume.
 - extendedWaitUntil:
     visible:
       id: "Home-Screen"
-    timeout: 15000
+    timeout: 30000

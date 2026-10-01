@@ -20,6 +20,9 @@ jest.mock('../../data/auth', () => ({
   getProfile: jest.fn(),
   updateProfile: jest.fn(),
 }));
+jest.mock('../../data/conversations', () => ({
+  listConversations: jest.fn(() => Promise.resolve([])),
+}));
 
 const mockGetSession = getSession as jest.Mock;
 
@@ -30,6 +33,7 @@ const ROUTES = {
   _layout: RootLayout,
   '(app)/_layout': AppLayout,
   '(app)/index': HomeScreen,
+  '(app)/create-group': () => null,
   '(auth)/_layout': AuthLayout,
   '(auth)/sign-in': SignInScreen,
 };
