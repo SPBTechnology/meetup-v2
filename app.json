@@ -26,7 +26,13 @@
     "plugins": [
       "expo-router",
       "expo-status-bar",
-      "expo-sqlite"
+      "expo-sqlite",
+      [
+        "expo-contacts",
+        {
+          "contactsPermission": "Allow MeetUp to access your contacts to find friends who already use the app."
+        }
+      ]
     ],
     "scheme": "meetup",
     "experiments": {

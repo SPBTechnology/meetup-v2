@@ -144,4 +144,17 @@ describe('conversation route', () => {
     await waitFor(() => expect(screen.queryByTestId('Conversation-LoadingMore')).not.toBeOnTheScreen());
   });
 
+  it('navigates to invite with the conversation id when Invite is pressed', async () => {
+    const user = userEvent.setup();
+
+    const testRouter = await renderRoute(
+      { 'conversation/[id]': ConversationScreen, invite: () => null },
+      { initialUrl: '/conversation/conv-1' },
+    );
+    await waitFor(() => expect(screen.getByText('Hello')).toBeOnTheScreen());
+
+    await user.press(screen.getByTestId('Conversation-InviteButton'));
+
+    await waitFor(() => expect(testRouter.getPathnameWithParams()).toBe('/invite?conversationId=conv-1'));
+  });
 });

@@ -85,9 +85,14 @@ export default function HomeScreen() {
         )}
       </View>
 
-      <Pressable style={styles.newButton} onPress={() => router.push('/create-group')} testID="Home-NewGroupButton">
-        <Text style={styles.newButtonText}>New group</Text>
-      </Pressable>
+      <View style={styles.footer}>
+        <Pressable style={styles.newButton} onPress={() => router.push('/create-group')} testID="Home-NewGroupButton">
+          <Text style={styles.newButtonText}>New group</Text>
+        </Pressable>
+        <Pressable style={styles.joinButton} onPress={() => router.push('/join')} testID="Home-JoinButton">
+          <Text style={styles.joinButtonText}>Join with code</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -147,16 +152,35 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#6b7280',
   },
+  footer: {
+    flexDirection: 'row',
+    gap: 12,
+    marginHorizontal: 24,
+    marginVertical: 16,
+  },
   newButton: {
+    flex: 1,
     backgroundColor: '#2563eb',
     borderRadius: 8,
     paddingVertical: 14,
     alignItems: 'center',
-    marginHorizontal: 24,
-    marginVertical: 16,
   },
   newButtonText: {
     color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  joinButton: {
+    flex: 1,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#2563eb',
+    borderRadius: 8,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  joinButtonText: {
+    color: '#2563eb',
     fontSize: 16,
     fontWeight: '600',
   },
