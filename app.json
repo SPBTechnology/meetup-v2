@@ -32,7 +32,8 @@
         {
           "contactsPermission": "Allow MeetUp to access your contacts to find friends who already use the app."
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "scheme": "meetup",
     "experiments": {

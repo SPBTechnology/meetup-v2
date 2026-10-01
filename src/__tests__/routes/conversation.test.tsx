@@ -17,6 +17,10 @@ jest.mock('../../data/messages', () => ({
   sendMessage: jest.fn(),
   subscribeToMessages: jest.fn(() => jest.fn()),
 }));
+jest.mock('../../data/events', () => ({
+  listEventSummaries: jest.fn(() => Promise.resolve([])),
+  subscribeToEventList: jest.fn(() => jest.fn()),
+}));
 jest.mock('../../hooks/useSession', () => ({ useSession: () => mockSessionValue }));
 
 const mockGetConversation = getConversation as jest.Mock;
