@@ -1,6 +1,6 @@
 # State
 
-**Last updated:** 2026-10-01 · **Current phase:** 4 complete (PR pending) → Phase 5 next · **Branch:** `phase-4-invites`
+**Last updated:** 2026-10-01 · **Current phase:** 5 complete (PR pending) → Phase 6 next · **Branch:** `phase-5-events`
 
 ## Phase plan
 
@@ -15,7 +15,7 @@ alone — flag them at the start of the phase.
 | 2 | Auth + profiles: Supabase client + session storage (check current Expo/Supabase docs), `src/data/auth.ts` + `DataError` mapping, sign-up/sign-in screens, auth-gated routing, profile edit (display name, phone). Maestro with scripted install/teardown + first flow (sign up → home). | ✅ Done (merged) | Sonnet (Opus for session-storage choice) | Install Java; EAS login; dev build |
 | 3 | Conversations + messaging: list, create group, chat screen, send, paging, Realtime; component + integration tests. | ✅ Done (merged) | Sonnet | — |
 | 4 | Invites UI: share code/link (`accept_invite`), phonebook match (`match_phone_numbers` + `expo-contacts`), SMS for non-users (`expo-sms`). Backend already done in Phase 1. | ✅ Done (PR to merge) | Sonnet | Device test (contacts/SMS) — still outstanding, see below |
-| 5 | Events: port EventChip, EventBar, EventDetailCard, create wizard (`create_event`), edit, confirm — with tests. | | Sonnet | — |
+| 5 | Events: port EventChip, EventBar, EventDetailCard, create wizard (`create_event`), edit, confirm — with tests. | ✅ Done (PR to merge) | Sonnet | — |
 | 6 | Push notifications: Expo Notifications, token registration, triggers for messages/event changes. | | Opus → Sonnet | APNs key / FCM, dev build |
 | 7 | First real groups: internal build to 3–5 groups; collect how they phrase availability. | | — | Everything |
 
@@ -91,8 +91,65 @@ venue app (request model), rate limiting on invite/phone RPCs before public laun
   `npm run db:reset` had deleted) produced a generic error on `createConversation` — same root
   cause already diagnosed in Phase 3, not a new bug; `pm clear` + fresh sign-in resolved it.
 
+## Done in Phase 5 (2026-10-01)
+
+- **Data layer**: `event_summaries` view (`security_invoker`, reuses `is_event_member` RLS via
+  the underlying tables, three `LEFT JOIN LATERAL`s for per-event date/location/response
+  aggregation — `multi_date` hides per-date fields since aggregating across options is
+  misleading). `src/data/events.ts`: `listEventSummaries`, `getEventDetail` (parallel + one
+  conditional query, skipped entirely when an event has no date options yet), `createEvent`
+  (wraps the Phase 1 `create_event` RPC), `updateEvent`, `confirmEvent`, `cancelEvent`,
+  `addDateOption`/`deleteDateOption`, `addLocation`/`updateLocationName`/`deleteLocation`,
+  `respondToDateOption` (upsert), and two Realtime subscriptions — `event_responses` has no
+  `event_id` column, so its subscription filters client-side against the event's current
+  date-option ids.
+- **Screens**: `EventChip`/`EventBar` (ported from the prototype design, status dot + nearest
+  date or "Multiple dates" + location + response counts, counts hidden when multi-date);
+  `(app)/event/[id].tsx` (detail: edit title, add location/date, respond, confirm, cancel —
+  creator-only controls, read-only for others unless `allow_alt_dates`/`allow_alt_locations`);
+  `(app)/event/create.tsx` (title, locations, dates via two-stage native date+time picker,
+  alt-dates/alt-locations toggles). Both are modal routes; `EventBar` wired into
+  `(app)/conversation/[id].tsx` with reload-on-focus and a Realtime-driven refetch.
+- **New native dep**: `@react-native-community/datetimepicker` (Android only supports single
+  `date` or `time` mode, not both — the two-stage flow and the `combineDateAndTime` helper in
+  `src/lib/dateTime.ts` exist because of this; see conventions.md).
+- **Tests**: 174 unit (data layer incl. summary mapping and the two Realtime subscriptions,
+  both new components, both new routes), 102 pgTAP (incl. 7 for `event_summaries`), 21
+  integration (`event_summaries` reachability/scoping — `create_event` itself already had RPC
+  coverage from Phase 1). All green via `npm run test:all`.
+- **Found and fixed before shipping** (code review + manual testing, not shipped bugs):
+  a date+time combination bug (the time-picker stage returns a `Date` carrying *today's* date,
+  not the day picked in the date stage — fixed by extracting `combineDateAndTime`); a Realtime
+  staleness bug in `event/[id].tsx` (the resubscribe effect was keyed on `detail === null`
+  instead of the actual set of date-option ids, so responses to a date added after the first
+  load were silently dropped from the client-side filter).
+- **Found via manual device testing — new, cross-cutting, pre-existing (not a Phase 5
+  regression)**: see "No safe-area-inset handling" below. Everything else manually verified
+  end-to-end on the Android emulator: sign-up → create group → create an event with a location
+  and a date (two-stage picker, confirmed the combined date+time was correct) → respond →
+  confirm the date → chip updated live in the conversation.
+
 ## Known issues / notes
 
+- **No safe-area-inset handling anywhere in the app (found in Phase 5, affects every phase) —
+  HIGH PRIORITY, recommend fixing before Phase 6**: every screen's header row (`Back`/`Cancel`/
+  `Close`/`Invite`, etc.) is laid out with a plain `paddingTop`, not `useSafeAreaInsets()` or
+  `SafeAreaView`, even though `react-native-safe-area-context` is already a dependency (pulled
+  in transitively, never actually used). On the Android emulator (Pixel 9, Android's edge-to-edge
+  enforcement) this isn't just a cosmetic overlap: `adb shell dumpsys window` confirms the status
+  bar owns the top gesture region (`mTopGestureHost=Window{...StatusBar}`), and taps on header
+  Pressables landing in or near that region are silently swallowed — confirmed reproducible from
+  a fully clean environment (killed Metro, cleared cache, fresh app process) and independent of
+  the specific `onPress` handler (`router.back()`, `router.push()`, confirmed via a temporary
+  `console.log` that the handler never fires for affected buttons). Buttons lower on screen
+  (title-row `Edit`, response buttons, `+ Event`, etc.) are unaffected and work reliably.
+  Reproduce: on the conversation screen, tap `Conversation-BackButton` or
+  `Conversation-InviteButton` — nothing happens; tap `EventDetail-EditTitleButton` a few rows
+  down — works. Fix: wrap screen headers in insets from `useSafeAreaInsets()` (already a
+  dependency) across every screen, not just Phase 5's — this is app-wide, present since Phase 2.
+  No test caught this because no component test renders inside a `SafeAreaProvider` with
+  non-zero insets, and neither Maestro flow has ever tapped a header Back/Cancel button (both
+  only exercise forward navigation and hardware-back-equivalent assertions).
 - **Device test still needed (Phase 4)**: contacts matching and SMS composing are unit-tested
   with mocks but not verified on a real device — the Android emulator can't meaningfully
   exercise either (empty contacts by default, no real SMS transport). Needs the owner.
@@ -115,9 +172,10 @@ venue app (request model), rate limiting on invite/phone RPCs before public laun
   don't `audit fix --force` (breaks Expo pins).
 - Prototype (`../meetup`) is reference only; its local stack is stopped with data preserved.
 
-## Next step (Phase 5, first task)
+## Next step
 
-Events: port EventChip, EventBar, EventDetailCard, create wizard (`create_event`), edit, confirm
-from the prototype (`../meetup`) — with tests at each step, as in Phases 2-4. Backend schema and
-RPCs already exist from Phase 1 (`events`, `event_date_options`, `event_locations`,
-`event_responses`, `create_event`).
+Recommend a short bug-fix pass before Phase 6: fix the no-safe-area-inset issue above (every
+screen's header, app-wide) and add a regression test/Maestro step that actually taps a header
+Back/Cancel button — the current test suite has never exercised that path at all. Then Phase 6:
+Push notifications — Expo Notifications, token registration, triggers for messages/event changes
+(needs an APNs key / FCM and a dev build; see the phase table).
