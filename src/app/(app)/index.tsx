@@ -57,31 +57,33 @@ export default function HomeScreen() {
         </Text>
       )}
 
-      {loading ? (
-        <ActivityIndicator size="large" testID="Home-Loading" style={styles.loading} />
-      ) : conversations.length === 0 ? (
-        <Text style={styles.empty} testID="Home-EmptyText">
-          No conversations yet. Start one below.
-        </Text>
-      ) : (
-        <FlatList
-          testID="Home-ConversationList"
-          data={conversations}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <Pressable
-              style={styles.row}
-              testID={`Home-Conversation-${item.id}`}
-              onPress={() => router.push(`/conversation/${item.id}`)}
-            >
-              <Text style={styles.rowTitle}>{conversationTitle(item)}</Text>
-              <Text style={styles.rowPreview} numberOfLines={1}>
-                {item.lastMessage ? item.lastMessage.content : 'No messages yet'}
-              </Text>
-            </Pressable>
-          )}
-        />
-      )}
+      <View style={styles.content}>
+        {loading ? (
+          <ActivityIndicator size="large" testID="Home-Loading" style={styles.loading} />
+        ) : conversations.length === 0 ? (
+          <Text style={styles.empty} testID="Home-EmptyText">
+            No conversations yet. Start one below.
+          </Text>
+        ) : (
+          <FlatList
+            testID="Home-ConversationList"
+            data={conversations}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <Pressable
+                style={styles.row}
+                testID={`Home-Conversation-${item.id}`}
+                onPress={() => router.push(`/conversation/${item.id}`)}
+              >
+                <Text style={styles.rowTitle}>{conversationTitle(item)}</Text>
+                <Text style={styles.rowPreview} numberOfLines={1}>
+                  {item.lastMessage ? item.lastMessage.content : 'No messages yet'}
+                </Text>
+              </Pressable>
+            )}
+          />
+        )}
+      </View>
 
       <Pressable style={styles.newButton} onPress={() => router.push('/create-group')} testID="Home-NewGroupButton">
         <Text style={styles.newButtonText}>New group</Text>
@@ -116,6 +118,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     paddingHorizontal: 24,
     marginBottom: 8,
+  },
+  content: {
+    flex: 1,
   },
   loading: {
     marginTop: 24,
