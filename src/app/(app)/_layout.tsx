@@ -6,6 +6,8 @@ export default function AppLayout() {
       <Stack.Screen name="create-group" options={{ presentation: 'modal' }} />
       <Stack.Screen name="invite" options={{ presentation: 'modal' }} />
       <Stack.Screen name="join" options={{ presentation: 'modal' }} />
+      <Stack.Screen name="event/create" options={{ presentation: 'modal' }} />
+      <Stack.Screen name="event/[id]" options={{ presentation: 'modal' }} />
     </Stack>
   );
 }

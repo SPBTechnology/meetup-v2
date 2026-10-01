@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
+import { EventBar } from '../../../components/EventBar';
 import { getConversation } from '../../../data/conversations';
 import { isDataError } from '../../../data/errors';
+import { listEventSummaries, subscribeToEventList, type EventSummary } from '../../../data/events';
 import { listMessages, sendMessage, subscribeToMessages, type Message } from '../../../data/messages';
 import { useSession } from '../../../hooks/useSession';
 import { describeDataError } from '../../../lib/errorMessages';
@@ -30,6 +32,23 @@ export default function ConversationScreen() {
   const [error, setError] = useState<string | null>(null);
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
+  const [events, setEvents] = useState<EventSummary[]>([]);
+  const [eventsLoading, setEventsLoading] = useState(true);
+
+  const loadEvents = useCallback(() => {
+    listEventSummaries(id)
+      .then(setEvents)
+      .catch(() => undefined) // Non-critical: the EventBar just stays empty/stale on failure.
+      .finally(() => setEventsLoading(false));
+  }, [id]);
+
+  // Refetches on focus (not just mount) so returning from creating or
+  // editing an event shows the latest state without needing Realtime for it.
+  useFocusEffect(loadEvents);
+
+  useEffect(() => {
+    return subscribeToEventList(id, loadEvents);
+  }, [id, loadEvents]);
 
   useEffect(() => {
     let active = true;
@@ -109,6 +128,13 @@ export default function ConversationScreen() {
           <Text style={styles.invite}>Invite</Text>
         </Pressable>
       </View>
+
+      <EventBar
+        events={events}
+        loading={eventsLoading}
+        onSelectEvent={(eventId) => router.push(`/event/${eventId}`)}
+        onAddEvent={() => router.push({ pathname: '/event/create', params: { conversationId: id } })}
+      />
 
       {error && (
         <Text style={styles.error} testID="Conversation-ErrorText">
