@@ -107,6 +107,12 @@ isOneToOne: false
       foreignKeyName: "event_date_options_event_id_fkey"
       columns: ["event_id"]
 isOneToOne: false
+      referencedRelation: "event_summaries"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "event_date_options_event_id_fkey"
+      columns: ["event_id"]
+isOneToOne: false
       referencedRelation: "events"
       referencedColumns: ["id"]
     }
@@ -127,6 +133,12 @@ isOneToOne: false
       columns: ["created_by"]
 isOneToOne: false
       referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "event_locations_event_id_fkey"
+      columns: ["event_id"]
+isOneToOne: false
+      referencedRelation: "event_summaries"
       referencedColumns: ["id"]
     },{
       foreignKeyName: "event_locations_event_id_fkey"
@@ -259,6 +271,31 @@ isOneToOne: false
     },{
       foreignKeyName: "messages_sender_id_fkey"
       columns: ["last_message_sender_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"event_summaries": {
+                  Row: {
+                    "accepted_count": number | null,"conversation_id": string | null,"created_at": string | null,"created_by": string | null,"declined_count": number | null,"first_location_name": string | null,"id": string | null,"location_count": number | null,"maybe_count": number | null,"multi_date": boolean | null,"nearest_date": string | null,"single_date_option_id": string | null,"status": Database["public"]['Enums']["event_status"] | null,"title": string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "events_conversation_id_fkey"
+      columns: ["conversation_id"]
+isOneToOne: false
+      referencedRelation: "conversation_summaries"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "events_conversation_id_fkey"
+      columns: ["conversation_id"]
+isOneToOne: false
+      referencedRelation: "conversations"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "events_created_by_fkey"
+      columns: ["created_by"]
 isOneToOne: false
       referencedRelation: "profiles"
       referencedColumns: ["id"]
